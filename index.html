@@ -555,12 +555,15 @@ function listenCloud(uid) {
     if (snap.exists()) {
       const data = snap.data();
       if (data.objets && Array.isArray(data.objets)) {
-        // Fusionner intelligemment cloud + local
         const localObjets = JSON.parse(localStorage.getItem('gestion-objets') || '[]');
         objets = mergeObjets(localObjets, data.objets);
         localStorage.setItem('gestion-objets', JSON.stringify(objets));
-        renderListe();
-        renderDashboard();
+        const modalOuvert = ['modal-objet','modal-detail','modal-cloud','modal-print']
+          .some(id => document.getElementById(id) && document.getElementById(id).classList.contains('open'));
+        if (!modalOuvert) {
+          renderListe();
+          renderDashboard();
+        }
       }
     }
   });
