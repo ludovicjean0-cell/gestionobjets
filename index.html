@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#111827">
+<title>GestionObjets</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#111827; --bg2:#1f2937; --bg3:#374151;
+  --card:#1e2a3a; --card2:#243040;
+  --blue:#3b82f6; --blue2:#60a5fa;
+  --green:#22c55e; --green2:#4ade80;
+  --gold:#f59e0b; --gold2:#fbbf24;
+  --red:#ef4444; --red2:#f87171;
+  --orange:#f97316; --orange2:#fb923c;
+  --purple:#a855f7;
+  --text:#f1f5f9; --text2:#94a3b8; --text3:#64748b;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.15);
+  --radius:14px; --radius-sm:9px; --radius-lg:20px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;}
+.app{display:flex;flex-direction:column;height:100dvh;}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0;gap:10px;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;white-space:nowrap;}
+.logo span{color:var(--gold2);}
+.topbar-right{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.btn-icon{background:var(--card2);border:none;color:var(--text2);width:36px;height:36px;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
+.btn-icon:hover{background:var(--bg3);}
+.btn-icon:active{transform:scale(0.92);}
+.btn-icon svg{width:18px;height:18px;stroke-width:1.8;}
+
+/* SEARCH GLOBAL */
+.search-global{flex:1;min-width:0;}
+.search-global input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:8px 12px;outline:none;}
+.search-global input:focus{border-color:var(--blue2);}
+.search-global input::placeholder{color:var(--text3);}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.page{display:none;padding:16px;padding-bottom:24px;}
+.page.active{display:block;animation:fadeIn 0.2s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* BOTTOM NAV */
+.bottom-nav{background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-shrink:0;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px 12px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;border:none;background:none;transition:color 0.15s;}
+.nav-item svg{width:20px;height:20px;stroke-width:1.8;}
+.nav-item.active{color:var(--gold2);}
+
+/* CARDS */
+.obj-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;cursor:pointer;transition:all 0.15s;overflow:hidden;display:flex;}
+.obj-card:active{background:var(--card2);}
+.obj-card-img{width:90px;height:90px;object-fit:cover;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:28px;}
+.obj-card-img img{width:90px;height:90px;object-fit:cover;}
+.obj-card-body{flex:1;padding:12px;min-width:0;}
+.obj-card-nom{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.obj-card-piece{font-size:12px;color:var(--text3);margin-bottom:6px;}
+.obj-card-meta{display:flex;gap:8px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-bon{background:rgba(34,197,94,0.15);color:var(--green2);}
+.badge-moyen{background:rgba(245,158,11,0.15);color:var(--gold2);}
+.badge-mauvais{background:rgba(239,68,68,0.15);color:var(--red2);}
+.badge-jeter{background:rgba(100,116,139,0.2);color:var(--text3);}
+
+/* FILTERS */
+.filters-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none;}
+.filters-row::-webkit-scrollbar{display:none;}
+.filter-chip{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--card);color:var(--text2);transition:all 0.15s;white-space:nowrap;}
+.filter-chip.active{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600;}
+
+/* FORMS */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:5px;display:block;}
+.form-label.required::after{content:' *';color:var(--red2);}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;padding:10px 12px;outline:none;transition:border-color 0.15s;-webkit-appearance:none;}
+.form-control:focus{border-color:var(--blue2);}
+select.form-control{cursor:pointer;}
+textarea.form-control{resize:vertical;min-height:80px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* PHOTO */
+.photo-zone{background:var(--bg3);border:2px dashed var(--border2);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:all 0.15s;margin-bottom:6px;}
+.photo-zone:hover{border-color:var(--blue2);background:var(--card2);}
+.photo-preview{width:100%;max-height:220px;object-fit:cover;border-radius:var(--radius-sm);display:none;}
+.photo-preview.show{display:block;}
+.photo-actions{display:flex;gap:8px;margin-top:8px;}
+
+/* BUTTONS */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;width:100%;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-secondary{background:var(--card2);color:var(--text);}
+.btn-danger{background:rgba(239,68,68,0.15);color:var(--red2);border:1px solid rgba(239,68,68,0.3);}
+.btn-gold{background:var(--gold);color:#111;font-weight:700;}
+.btn-sm{padding:7px 14px;font-size:13px;width:auto;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;flex-direction:column;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border-radius:var(--radius-lg) var(--radius-lg) 0 0;margin-top:auto;padding:20px 16px 32px;width:100%;max-height:94dvh;overflow-y:auto;animation:slideUp 0.25s cubic-bezier(0.32,0.72,0,1);}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px;}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;}
+.modal-close{background:var(--card2);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+
+/* DASHBOARD */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.dash-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all 0.15s;}
+.dash-card:active{background:var(--card2);}
+.dash-piece-icon{font-size:28px;margin-bottom:6px;}
+.dash-piece-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:4px;}
+.dash-piece-count{font-size:24px;font-weight:800;color:var(--gold2);}
+.dash-piece-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.dash-total{background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:var(--radius);padding:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+
+/* ETAT COLORS */
+.etat-bon{color:var(--green2);}
+.etat-moyen{color:var(--gold2);}
+.etat-mauvais{color:var(--red2);}
+.etat-jeter{color:var(--text3);}
+
+/* EMPTY */
+.empty{text-align:center;padding:50px 20px;color:var(--text3);}
+.empty-icon{font-size:52px;margin-bottom:12px;opacity:0.5;}
+.empty p{font-size:14px;line-height:1.6;}
+
+/* DETAIL MODAL */
+.detail-photo{width:100%;max-height:240px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:16px;}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{font-size:13px;color:var(--text2);}
+.detail-val{font-size:14px;font-weight:500;text-align:right;}
+
+/* CLOUD DOT */
+.cloud-dot{width:8px;height:8px;border-radius:50%;background:var(--green2);border:2px solid var(--bg2);position:absolute;top:5px;right:5px;display:none;}
+
+/* PRINT STYLES */
+@media print {
+  .app { display: block; height: auto; }
+  .topbar, .bottom-nav, .filters-row, .search-global, .btn-icon, .modal-overlay { display: none !important; }
+  .content { overflow: visible; }
+  .page { display: block !important; padding: 0; }
+  .page:not(#page-liste) { display: none !important; }
+  body { background: white; color: black; font-family: Arial, sans-serif; }
+  .print-section { break-inside: avoid; margin-bottom: 24px; }
+  .print-title { font-size: 20px; font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #333; padding-bottom: 4px; }
+  .print-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .print-table th { background: #f3f4f6; padding: 6px 8px; text-align: left; border: 1px solid #d1d5db; font-weight: 600; }
+  .print-table td { padding: 6px 8px; border: 1px solid #d1d5db; vertical-align: top; }
+  .print-table tr:nth-child(even) td { background: #f9fafb; }
+  .no-print { display: none !important; }
+  .print-header { text-align: center; margin-bottom: 24px; }
+  .print-header h1 { font-size: 24px; margin-bottom: 4px; }
+  .print-header p { font-size: 12px; color: #6b7280; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">Gestion<span>Objets</span></div>
+  <div class="search-global">
+    <input type="text" id="search-input" placeholder="🔍 Nom, pièce, contenant…" oninput="renderListe()">
+  </div>
+  <div class="topbar-right">
+    <div style="position:relative">
+      <button class="btn-icon" onclick="openModal('modal-cloud')" title="Synchronisation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        <span class="cloud-dot" id="cloud-dot"></span>
+      </button>
+    </div>
+    <button class="btn-icon no-print" onclick="openAddModal()" title="Ajouter un objet" style="background:var(--blue);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- PAGE: LISTE -->
+  <div class="page active" id="page-liste">
+    <div class="filters-row" id="piece-filters"></div>
+    <div class="filters-row" id="etat-filters"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:13px;color:var(--text2)" id="results-count"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="sort-select" style="background:var(--card);border:1px solid var(--border);color:var(--text);font-size:12px;padding:5px 10px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;outline:none;-webkit-appearance:none" onchange="renderListe()">
+          <option value="nom">A → Z</option>
+          <option value="piece">Par pièce</option>
+          <option value="etat">Par état</option>
+          <option value="recent">Plus récent</option>
+        </select>
+        <button class="btn-icon no-print" onclick="printInventaire()" title="Imprimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="objets-list"></div>
+    <!-- Zone d'impression -->
+    <div id="print-zone" style="display:none"></div>
+  </div>
+
+  <!-- PAGE: DASHBOARD -->
+  <div class="page" id="page-dashboard">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:4px">📊 Tableau de bord</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Vue globale de votre inventaire</div>
+
+    <div class="dash-total">
+      <div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.7)">Total objets inventoriés</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:900;font-size:36px" id="dash-total">0</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;color:rgba(255,255,255,0.7)">En bon état</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:24px" id="dash-bon">0</div>
+      </div>
+    </div>
+
+    <div class="dash-grid" id="dash-pieces"></div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:12px">État des objets</div>
+      <div id="dash-etats"></div>
+    </div>
+
+    <button class="btn btn-gold no-print" onclick="printInventaire()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Imprimer l'inventaire complet
+    </button>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav no-print">
+  <button class="nav-item active" onclick="showPage('liste',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    Objets
+  </button>
+  <button class="nav-item" onclick="showPage('dashboard',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+    Dashboard
+  </button>
+</nav>
+</div>
+
+<!-- MODAL: AJOUTER / MODIFIER -->
+<div class="modal-overlay" id="modal-objet">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-handle" style="margin:0"></div>
+      <button class="modal-close" onclick="closeModal('modal-objet')">✕</button>
+    </div>
+    <div class="modal-title" id="modal-title">Nouvel objet</div>
+    <div style="height:12px"></div>
+
+    <div class="form-group">
+      <label class="form-label required">Nom de l'objet</label>
+      <input class="form-control" id="f-nom" type="text" placeholder="Ex: Aspirateur, Canapé, T-shirt bleu…">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label required">État</label>
+        <select class="form-control" id="f-etat">
+          <option value="">— État —</option>
+          <option value="Bon">✅ Bon</option>
+          <option value="Moyen">🟡 Moyen</option>
+          <option value="Mauvais">🔴 Mauvais</option>
+          <option value="À jeter">🗑️ À jeter</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Quantité</label>
+        <input class="form-control" id="f-qty" type="number" min="1" value="1">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label required">Pièce de stockage</label>
+      <select class="form-control" id="f-piece">
+        <option value="">— Choisir une pièce —</option>
+        <option value="Entrée">🚪 Entrée</option>
+        <option value="Salon">🛋️ Salon</option>
+        <option value="Grande chambre">🛏️ Grande chambre</option>
+        <option value="Petite chambre">🛏️ Petite chambre</option>
+        <option value="Salle de bain">🚿 Salle de bain</option>
+        <option value="Cuisine">🍳 Cuisine</option>
+        <option value="Placard">🗄️ Placard</option>
+        <option value="Cagibi">📦 Cagibi</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Contenant / Emplacement précis</label>
+      <input class="form-control" id="f-contenant" type="text" placeholder="Ex: Carton n°3, Étagère haute, Tiroir gauche…">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Catégorie</label>
+      <select class="form-control" id="f-categorie">
+        <option value="">— Catégorie (optionnel) —</option>
+        <option>Mobilier</option>
+        <option>Électroménager</option>
+        <option>Petit électroménager</option>
+        <option>Électronique / High-tech</option>
+        <option>Vêtements</option>
+        <option>Linge de maison</option>
+        <option>Cuisine / Vaisselle</option>
+        <option>Outillage / Bricolage</option>
+        <option>Décoration</option>
+        <option>Livres / Médias</option>
+        <option>Sport / Loisirs</option>
+        <option>Hygiène / Beauté</option>
+        <option>Jouets / Jeux</option>
+        <option>Divers</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Photo de l'objet</label>
+      <div class="photo-zone" id="photo-zone" onclick="triggerPhoto()">
+        <img class="photo-preview" id="photo-preview" src="" alt="Photo">
+        <div id="photo-placeholder">
+          <div style="font-size:32px;margin-bottom:8px">📷</div>
+          <div style="font-size:14px;color:var(--text2)">Appuyer pour ajouter une photo</div>
+        </div>
+      </div>
+      <div class="photo-actions" id="photo-actions" style="display:flex;margin-top:8px">
+        <div id="btn-camera-wrap" style="display:none;flex:1">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();triggerCamera()" style="width:100%">📷 Appareil photo</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();triggerGallery()" style="flex:1">🖼️ Galerie / Fichier</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();removePhoto()" id="btn-del-photo" style="display:none">🗑️ Suppr.</button>
+      </div>
+      <input type="file" id="photo-input-file" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(event)">
+      <input type="file" id="photo-input-gallery" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-control" id="f-notes" rows="2" placeholder="Remarques, numéro de série, date d'achat…"></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:4px">
+      <button class="btn btn-secondary" onclick="closeModal('modal-objet')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveObjet()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+        Enregistrer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DÉTAIL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-handle" style="margin:0"></div>
+      <button class="modal-close" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<!-- MODAL: IMPRIMER -->
+<div class="modal-overlay" id="modal-print">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-handle" style="margin:0"></div>
+      <button class="modal-close" onclick="closeModal('modal-print')">✕</button>
+    </div>
+    <div class="modal-title">🖨️ Imprimer l'inventaire</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Choisissez ce que vous souhaitez imprimer</div>
+    <div class="form-group">
+      <label class="form-label">Pièce</label>
+      <select class="form-control" id="print-piece">
+        <option value="all">Toutes les pièces</option>
+        <option value="Entrée">Entrée</option>
+        <option value="Salon">Salon</option>
+        <option value="Grande chambre">Grande chambre</option>
+        <option value="Petite chambre">Petite chambre</option>
+        <option value="Salle de bain">Salle de bain</option>
+        <option value="Cuisine">Cuisine</option>
+        <option value="Placard">Placard</option>
+        <option value="Cagibi">Cagibi</option>
+      </select>
+    </div>
+    <button class="btn btn-gold" onclick="doPrint()">🖨️ Lancer l'impression</button>
+  </div>
+</div>
+
+<!-- MODAL: CLOUD -->
+<div class="modal-overlay" id="modal-cloud">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-handle" style="margin:0"></div>
+      <button class="modal-close" onclick="closeModal('modal-cloud')">✕</button>
+    </div>
+    <div class="modal-title">☁️ Synchronisation Cloud</div>
+    <div id="cloud-login">
+      <div style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.6">Connectez-vous pour synchroniser sur tous vos appareils (PC Windows, tablette, smartphone Android).</div>
+      <div class="form-group"><label class="form-label">E-mail</label><input class="form-control" id="c-email" type="email" placeholder="votre@email.com"></div>
+      <div class="form-group"><label class="form-label">Mot de passe</label><input class="form-control" id="c-pass" type="password" placeholder="••••••••"></div>
+      <div id="c-err" style="color:var(--red2);font-size:13px;margin-bottom:10px;display:none"></div>
+      <button class="btn btn-primary" style="margin-bottom:10px" onclick="fbLogin()">Se connecter</button>
+      <button class="btn btn-secondary" onclick="fbRegister()">Créer un compte</button>
+    </div>
+    <div id="cloud-user" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px" id="c-avatar">?</div>
+        <div><div style="font-weight:600" id="c-uname">—</div><div style="font-size:12px;color:var(--text3)" id="c-uemail">—</div></div>
+      </div>
+      <div style="color:var(--green2);font-size:13px;text-align:center;margin-bottom:14px">✓ Synchronisation active</div>
+      <button class="btn btn-secondary" onclick="fbLogout()">Se déconnecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE MODULE -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FB = {
+  apiKey: "AIzaSyCdq1IekojdIUNv3yd2ZUK8Ccu65DxTLaM",
+  authDomain: "inventaire-5ebd5.firebaseapp.com",
+  projectId: "inventaire-5ebd5",
+  storageBucket: "inventaire-5ebd5.firebasestorage.app",
+  messagingSenderId: "906716001368",
+  appId: "1:906716001368:web:b41a768eb7e18b1082462d"
+};
+
+let fbAuth, fbDb, fbUser = null;
+
+function showCloudStatus(msg, color) {
+  let el = document.getElementById('cloud-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cloud-status';
+    el.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2a3a;border:1px solid rgba(255,255,255,0.15);color:#f1f5f9;font-size:13px;padding:8px 16px;border-radius:20px;z-index:9999;max-width:90vw;text-align:center';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.borderColor = color || 'rgba(255,255,255,0.15)';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+try {
+  if (FB.apiKey !== 'VOTRE_API_KEY') {
+    const app = initializeApp(FB);
+    fbAuth = getAuth(app);
+    fbDb   = getFirestore(app);
+    onAuthStateChanged(fbAuth, user => {
+      fbUser = user;
+      document.getElementById('cloud-dot').style.display = user ? 'block' : 'none';
+      document.getElementById('cloud-login').style.display = user ? 'none'  : 'block';
+      document.getElementById('cloud-user').style.display  = user ? 'block' : 'none';
+      if (user) {
+        const n = user.displayName || user.email.split('@')[0];
+        document.getElementById('c-avatar').textContent = n[0].toUpperCase();
+        document.getElementById('c-uname').textContent  = n;
+        document.getElementById('c-uemail').textContent = user.email;
+        showCloudStatus('✅ Connecté — synchronisation active', '#22c55e');
+        listenCloud(user.uid);
+      } else {
+        showCloudStatus('⚠️ Non connecté au cloud', '#f59e0b');
+      }
+    });
+  }
+} catch(e) {
+  showCloudStatus('❌ Erreur Firebase : ' + e.message, '#ef4444');
+}
+
+const err = (code) => ({'auth/invalid-email':'E-mail invalide','auth/user-not-found':'Compte introuvable','auth/wrong-password':'Mot de passe incorrect','auth/email-already-in-use':'E-mail déjà utilisé','auth/weak-password':'Mot de passe trop faible'}[code] || 'Erreur : ' + code);
+
+window.fbLogin = async () => {
+  const e = document.getElementById('c-err');
+  e.style.display = 'none';
+  if (!fbAuth) { e.textContent = 'Firebase non initialisé — vérifiez votre connexion internet.'; e.style.display = 'block'; return; }
+  try {
+    await signInWithEmailAndPassword(fbAuth, document.getElementById('c-email').value.trim(), document.getElementById('c-pass').value);
+    closeModal('modal-cloud');
+  }
+  catch(ex) { e.textContent = err(ex.code) + ' (' + ex.code + ')'; e.style.display = 'block'; }
+};
+window.fbRegister = async () => {
+  const e = document.getElementById('c-err');
+  e.style.display = 'none';
+  try { await createUserWithEmailAndPassword(fbAuth, document.getElementById('c-email').value.trim(), document.getElementById('c-pass').value); closeModal('modal-cloud'); }
+  catch(ex) { e.textContent = err(ex.code); e.style.display = 'block'; }
+};
+window.fbLogout = async () => { await signOut(fbAuth); };
+
+async function pushCloud(uid) {
+  if (!fbDb || !uid) return;
+  // On n'envoie pas les photos (trop lourdes) — seulement les métadonnées
+  const meta = objets.map(o => { const {photo, ...rest} = o; return rest; });
+  try { await setDoc(doc(fbDb, 'gestion', uid), { objets: meta, updatedAt: Date.now() }); }
+  catch(e) { console.warn(e); }
+}
+
+// Fusion intelligente : garde la version la plus récente de chaque objet
+function mergeObjets(local, remote) {
+  const merged = {};
+  // Indexer les objets locaux (avec photos)
+  local.forEach(o => { merged[o.id] = o; });
+  // Fusionner avec les objets distants
+  remote.forEach(o => {
+    if (!merged[o.id]) {
+      // Objet nouveau depuis le cloud → l'ajouter
+      merged[o.id] = o;
+    } else {
+      const localUpdated  = merged[o.id].updatedAt || 0;
+      const remoteUpdated = o.updatedAt || 0;
+      if (remoteUpdated > localUpdated) {
+        // La version distante est plus récente → la prendre, mais garder la photo locale
+        merged[o.id] = { ...o, photo: merged[o.id].photo || '' };
+      }
+      // Sinon on garde la version locale (plus récente)
+    }
+  });
+  // Supprimer les objets effacés sur le cloud (absents du remote ET du local récent)
+  // On garde seulement les ids présents dans remote OU modifiés localement après le dernier push
+  const remoteIds = new Set(remote.map(o => o.id));
+  return Object.values(merged).filter(o => {
+    // Garder si présent dans le cloud ou modifié localement très récemment (< 30s)
+    return remoteIds.has(o.id) || (Date.now() - (o.updatedAt || 0) < 30000);
+  }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+let unsub = null;
+let ignoreNextSnapshot = false;
+
+function listenCloud(uid) {
+  if (unsub) unsub();
+  if (!fbDb) return;
+  unsub = onSnapshot(doc(fbDb, 'gestion', uid), snap => {
+    if (ignoreNextSnapshot) { ignoreNextSnapshot = false; return; }
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.objets && Array.isArray(data.objets)) {
+        const localObjets = JSON.parse(localStorage.getItem('gestion-objets') || '[]');
+        objets = mergeObjets(localObjets, data.objets);
+        localStorage.setItem('gestion-objets', JSON.stringify(objets));
+        const modalOuvert = ['modal-objet','modal-detail','modal-cloud','modal-print']
+          .some(id => document.getElementById(id) && document.getElementById(id).classList.contains('open'));
+        if (!modalOuvert) {
+          renderListe();
+          renderDashboard();
+        }
+      }
+    }
+  });
+}
+
+window._push = () => { if (fbUser) pushCloud(fbUser.uid); };
+</script>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+let objets = JSON.parse(localStorage.getItem('gestion-objets') || '[]');
+let editingId = null;
+let currentPhoto = '';
+let filterPiece = 'all';
+let filterEtat  = 'all';
+
+const PIECES = [
+  {id:'all',          label:'Toutes',         icon:'🏠'},
+  {id:'Entrée',       label:'Entrée',         icon:'🚪'},
+  {id:'Salon',        label:'Salon',          icon:'🛋️'},
+  {id:'Grande chambre',label:'Gde chambre',   icon:'🛏️'},
+  {id:'Petite chambre',label:'Pte chambre',   icon:'🛏️'},
+  {id:'Salle de bain',label:'Salle de bain',  icon:'🚿'},
+  {id:'Cuisine',      label:'Cuisine',        icon:'🍳'},
+  {id:'Placard',      label:'Placard',        icon:'🗄️'},
+  {id:'Cagibi',       label:'Cagibi',         icon:'📦'},
+];
+
+const ETATS = [
+  {id:'all',    label:'Tous états'},
+  {id:'Bon',    label:'✅ Bon'},
+  {id:'Moyen',  label:'🟡 Moyen'},
+  {id:'Mauvais',label:'🔴 Mauvais'},
+  {id:'À jeter',label:'🗑️ À jeter'},
+];
+
+const ETAT_BADGE = {
+  'Bon':     'badge-bon',
+  'Moyen':   'badge-moyen',
+  'Mauvais': 'badge-mauvais',
+  'À jeter': 'badge-jeter',
+};
+
+function save() {
+  localStorage.setItem('gestion-objets', JSON.stringify(objets));
+  setTimeout(() => { if (window._push) window._push(); }, 150);
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  btn.classList.add('active');
+  if (page === 'dashboard') renderDashboard();
+}
+
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+['modal-objet','modal-detail','modal-cloud','modal-print'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => { if (e.target === document.getElementById(id)) closeModal(id); });
+});
+
+// ═══════════════════════════════════════════
+// FILTRES & LISTE
+// ═══════════════════════════════════════════
+function initFilters() {
+  document.getElementById('piece-filters').innerHTML = PIECES.map(p =>
+    `<div class="filter-chip ${filterPiece===p.id?'active':''}" onclick="setFilterPiece('${p.id}')">${p.icon} ${p.label}</div>`
+  ).join('');
+  document.getElementById('etat-filters').innerHTML = ETATS.map(e =>
+    `<div class="filter-chip ${filterEtat===e.id?'active':''}" onclick="setFilterEtat('${e.id}')">${e.label}</div>`
+  ).join('');
+}
+
+function setFilterPiece(id) { filterPiece = id; renderListe(); }
+function setFilterEtat(id)  { filterEtat  = id; renderListe(); }
+
+function getFiltered() {
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+  const sort = document.getElementById('sort-select')?.value || 'nom';
+  let list = [...objets];
+  if (filterPiece !== 'all') list = list.filter(o => o.piece === filterPiece);
+  if (filterEtat  !== 'all') list = list.filter(o => o.etat  === filterEtat);
+  if (q) list = list.filter(o =>
+    (o.nom||'').toLowerCase().includes(q) ||
+    (o.piece||'').toLowerCase().includes(q) ||
+    (o.contenant||'').toLowerCase().includes(q) ||
+    (o.categorie||'').toLowerCase().includes(q) ||
+    (o.notes||'').toLowerCase().includes(q)
+  );
+  list.sort((a,b) => {
+    if (sort==='nom')    return (a.nom||'').localeCompare(b.nom||'');
+    if (sort==='piece')  return (a.piece||'').localeCompare(b.piece||'');
+    if (sort==='etat')   return (a.etat||'').localeCompare(b.etat||'');
+    if (sort==='recent') return (b.createdAt||0)-(a.createdAt||0);
+    return 0;
+  });
+  return list;
+}
+
+function renderListe() {
+  initFilters();
+  const list = getFiltered();
+  document.getElementById('results-count').textContent = `${list.length} objet${list.length>1?'s':''}`;
+
+  if (!list.length) {
+    document.getElementById('objets-list').innerHTML = `<div class="empty">
+      <div class="empty-icon">📦</div>
+      <p>${objets.length ? 'Aucun résultat pour ces filtres' : 'Aucun objet — appuyez sur + pour commencer votre inventaire'}</p>
+    </div>`;
+    return;
+  }
+
+  document.getElementById('objets-list').innerHTML = list.map(o => `
+    <div class="obj-card" onclick="openDetail('${o.id}')">
+      <div class="obj-card-img">
+        ${o.photo ? `<img src="${o.photo}" alt="${o.nom}">` : pieceIcon(o.piece)}
+      </div>
+      <div class="obj-card-body">
+        <div class="obj-card-nom">${o.nom||'—'}</div>
+        <div class="obj-card-piece">${pieceIcon(o.piece)} ${o.piece||'—'}${o.contenant?' · '+o.contenant:''}</div>
+        <div class="obj-card-meta">
+          <span class="badge ${ETAT_BADGE[o.etat]||''}">${o.etat||'—'}</span>
+          ${o.qty>1?`<span style="font-size:11px;color:var(--text3)">×${o.qty}</span>`:''}
+          ${o.categorie?`<span style="font-size:11px;color:var(--text3)">• ${o.categorie}</span>`:''}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function pieceIcon(piece) {
+  const p = PIECES.find(x => x.id === piece);
+  return p ? p.icon : '📦';
+}
+
+// ═══════════════════════════════════════════
+// DETAIL
+// ═══════════════════════════════════════════
+function openDetail(id) {
+  const o = objets.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('detail-content').innerHTML = `
+    ${o.photo ? `<img class="detail-photo" src="${o.photo}" alt="${o.nom}">` : ''}
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px">${o.nom||'—'}</div>
+        ${o.categorie?`<div style="font-size:13px;color:var(--text3);margin-top:2px">${o.categorie}</div>`:''}
+      </div>
+      <span class="badge ${ETAT_BADGE[o.etat]||''}" style="font-size:13px;padding:5px 12px">${o.etat||'—'}</span>
+    </div>
+    <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+      <div class="detail-row"><span class="detail-label">📍 Pièce</span><span class="detail-val">${pieceIcon(o.piece)} ${o.piece||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">📦 Contenant</span><span class="detail-val">${o.contenant||'—'}</span></div>
+      <div class="detail-row"><span class="detail-label">🔢 Quantité</span><span class="detail-val">× ${o.qty||1}</span></div>
+      ${o.notes?`<div class="detail-row"><span class="detail-label">📝 Notes</span><span class="detail-val" style="max-width:60%;font-style:italic">${o.notes}</span></div>`:''}
+      <div class="detail-row" style="border:none"><span class="detail-label" style="font-size:11px;color:var(--text3)">Ajouté le</span><span class="detail-val" style="font-size:12px;color:var(--text3)">${new Date(o.createdAt||Date.now()).toLocaleDateString('fr-FR')}</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-secondary" onclick="editObjet('${o.id}')">✏️ Modifier</button>
+      <button class="btn btn-danger" onclick="deleteObjet('${o.id}')">🗑️ Supprimer</button>
+    </div>`;
+  openModal('modal-detail');
+}
+
+// ═══════════════════════════════════════════
+// FORMULAIRE
+// ═══════════════════════════════════════════
+function openAddModal() {
+  editingId = null;
+  currentPhoto = '';
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Nouvel objet';
+  openModal('modal-objet');
+  setTimeout(() => document.getElementById('f-nom').focus(), 300);
+}
+
+function clearForm() {
+  ['f-nom','f-contenant','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-qty').value = '1';
+  document.getElementById('f-etat').value = '';
+  document.getElementById('f-piece').value = '';
+  document.getElementById('f-categorie').value = '';
+  setPhotoUI('');
+}
+
+function setPhotoUI(src) {
+  currentPhoto = src || '';
+  const preview = document.getElementById('photo-preview');
+  const placeholder = document.getElementById('photo-placeholder');
+  const btnDel = document.getElementById('btn-del-photo');
+  if (src) {
+    preview.src = src;
+    preview.classList.add('show');
+    placeholder.style.display = 'none';
+    if (btnDel) btnDel.style.display = 'inline-flex';
+  } else {
+    preview.classList.remove('show');
+    placeholder.style.display = 'block';
+    if (btnDel) btnDel.style.display = 'none';
+  }
+}
+
+function triggerPhoto() { if (!currentPhoto) triggerGallery(); }
+
+function triggerCamera() {
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
+    // Sur mobile : ouvre directement l'appareil photo
+    document.getElementById('photo-input-file').click();
+  } else {
+    // Sur PC : ouvre la sélection de fichier car pas d'accès caméra direct
+    alert('Sur PC, utilisez le bouton "Galerie / Fichier" pour sélectionner une photo depuis votre ordinateur.\n\nSur smartphone ou tablette, ce bouton ouvrira directement l\'appareil photo.');
+  }
+}
+
+function triggerGallery() { document.getElementById('photo-input-gallery').click(); }
+function removePhoto() { setPhotoUI(''); }
+
+// Affichage adaptatif des boutons selon l'appareil
+function initPhotoButtons() {
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const btnCamera = document.getElementById('btn-camera-wrap');
+  if (btnCamera) btnCamera.style.display = isMobile ? 'flex' : 'none';
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    // Compression
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h*MAX/w); w = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      setPhotoUI(canvas.toDataURL('image/jpeg', 0.75));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function saveObjet() {
+  const nom = document.getElementById('f-nom').value.trim();
+  const etat = document.getElementById('f-etat').value;
+  const piece = document.getElementById('f-piece').value;
+  if (!nom)  { alert('Veuillez renseigner le nom de l\'objet'); return; }
+  if (!etat) { alert('Veuillez indiquer l\'état'); return; }
+  if (!piece){ alert('Veuillez choisir une pièce'); return; }
+
+  const obj = {
+    id: editingId || Date.now().toString(),
+    nom,
+    etat,
+    qty: parseInt(document.getElementById('f-qty').value) || 1,
+    piece,
+    contenant: document.getElementById('f-contenant').value.trim(),
+    categorie: document.getElementById('f-categorie').value,
+    notes: document.getElementById('f-notes').value.trim(),
+    photo: currentPhoto,
+    createdAt: editingId ? (objets.find(o=>o.id===editingId)||{}).createdAt || Date.now() : Date.now(),
+    updatedAt: Date.now(),
+  };
+
+  if (editingId) {
+    const idx = objets.findIndex(o => o.id === editingId);
+    if (idx >= 0) objets[idx] = obj;
+  } else {
+    objets.unshift(obj);
+  }
+  save();
+  closeModal('modal-objet');
+  closeModal('modal-detail');
+  renderListe();
+}
+
+function editObjet(id) {
+  const o = objets.find(x => x.id === id);
+  if (!o) return;
+  editingId = id;
+  clearForm();
+  document.getElementById('modal-title').textContent = 'Modifier l\'objet';
+  document.getElementById('f-nom').value       = o.nom || '';
+  document.getElementById('f-etat').value      = o.etat || '';
+  document.getElementById('f-qty').value       = o.qty || 1;
+  document.getElementById('f-piece').value     = o.piece || '';
+  document.getElementById('f-contenant').value = o.contenant || '';
+  document.getElementById('f-categorie').value = o.categorie || '';
+  document.getElementById('f-notes').value     = o.notes || '';
+  setPhotoUI(o.photo || '');
+  closeModal('modal-detail');
+  openModal('modal-objet');
+}
+
+function deleteObjet(id) {
+  if (!confirm('Supprimer cet objet définitivement ?')) return;
+  objets = objets.filter(o => o.id !== id);
+  save();
+  closeModal('modal-detail');
+  renderListe();
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard() {
+  const total = objets.reduce((s,o) => s + (o.qty||1), 0);
+  const bon   = objets.filter(o => o.etat === 'Bon').reduce((s,o) => s + (o.qty||1), 0);
+  document.getElementById('dash-total').textContent = total;
+  document.getElementById('dash-bon').textContent = bon;
+
+  // Par pièce
+  const pieces = PIECES.filter(p => p.id !== 'all');
+  document.getElementById('dash-pieces').innerHTML = pieces.map(p => {
+    const items = objets.filter(o => o.piece === p.id);
+    const qty   = items.reduce((s,o) => s + (o.qty||1), 0);
+    if (!qty && !items.length) return '';
+    return `<div class="dash-card" onclick="setPieceAndGo('${p.id}')">
+      <div class="dash-piece-icon">${p.icon}</div>
+      <div class="dash-piece-name">${p.label}</div>
+      <div class="dash-piece-count">${items.length}</div>
+      <div class="dash-piece-sub">${qty} unité${qty>1?'s':''}</div>
+    </div>`;
+  }).join('');
+
+  // États
+  const etats = [
+    {label:'Bon état',  color:var_green2,  count:objets.filter(o=>o.etat==='Bon').length},
+    {label:'État moyen',color:'#fbbf24',   count:objets.filter(o=>o.etat==='Moyen').length},
+    {label:'Mauvais',   color:'#f87171',   count:objets.filter(o=>o.etat==='Mauvais').length},
+    {label:'À jeter',   color:'#64748b',   count:objets.filter(o=>o.etat==='À jeter').length},
+  ];
+  const maxE = Math.max(...etats.map(e=>e.count), 1);
+  document.getElementById('dash-etats').innerHTML = etats.map(e =>
+    `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="width:90px;font-size:12px;color:var(--text2)">${e.label}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:4px;height:8px;overflow:hidden">
+        <div style="width:${Math.round(e.count/maxE*100)}%;height:100%;background:${e.color};border-radius:4px;transition:width 0.4s"></div>
+      </div>
+      <div style="width:28px;text-align:right;font-size:13px;font-weight:600">${e.count}</div>
+    </div>`
+  ).join('');
+}
+
+const var_green2 = '#4ade80';
+
+function setPieceAndGo(piece) {
+  filterPiece = piece;
+  filterEtat  = 'all';
+  showPage('liste', document.querySelectorAll('.nav-item')[0]);
+  document.querySelectorAll('.nav-item')[0].classList.add('active');
+  document.querySelectorAll('.nav-item')[1].classList.remove('active');
+  renderListe();
+}
+
+// ═══════════════════════════════════════════
+// IMPRESSION
+// ═══════════════════════════════════════════
+function printInventaire() { openModal('modal-print'); }
+
+function doPrint() {
+  closeModal('modal-print');
+  const pieceFilter = document.getElementById('print-piece').value;
+  const pieces = pieceFilter === 'all' ? PIECES.filter(p => p.id !== 'all') : PIECES.filter(p => p.id === pieceFilter);
+
+  const printZone = document.getElementById('print-zone');
+  const date = new Date().toLocaleDateString('fr-FR', {day:'numeric',month:'long',year:'numeric'});
+
+  printZone.innerHTML = `
+    <div class="print-header">
+      <h1>Inventaire de l'appartement</h1>
+      <p>Édité le ${date} · ${objets.length} objet(s) au total</p>
+    </div>
+    ${pieces.map(p => {
+      const items = objets.filter(o => o.piece === p.id);
+      if (!items.length) return '';
+      const total = items.reduce((s,o) => s + (o.qty||1), 0);
+      return `<div class="print-section">
+        <div class="print-title">${p.icon} ${p.label} — ${items.length} article(s) / ${total} unité(s)</div>
+        <table class="print-table">
+          <thead><tr><th>Nom</th><th>Catégorie</th><th>État</th><th>Qté</th><th>Contenant</th><th>Notes</th></tr></thead>
+          <tbody>
+            ${items.sort((a,b)=>(a.nom||'').localeCompare(b.nom||'')).map(o => `
+              <tr>
+                <td><b>${o.nom||'—'}</b></td>
+                <td>${o.categorie||'—'}</td>
+                <td>${o.etat||'—'}</td>
+                <td style="text-align:center">${o.qty||1}</td>
+                <td>${o.contenant||'—'}</td>
+                <td>${o.notes||''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    }).join('')}`;
+
+  printZone.style.display = 'block';
+  document.getElementById('objets-list').style.display = 'none';
+  setTimeout(() => {
+    window.print();
+    printZone.style.display = 'none';
+    document.getElementById('objets-list').style.display = 'block';
+  }, 300);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', {scope:'/'}).catch(()=>{}));
+}
+
+renderListe();
+initPhotoButtons();
+</script>
+</body>
+</html>
